@@ -1,0 +1,71 @@
+{% extends "base.html" %} {% block title %}데이터셋 목록 - PCR Autolearner{%
+endblock %} {% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center">
+  <h1>데이터셋 목록</h1>
+  <a href="/datasets/upload" class="btn btn-primary">+ 새 데이터셋</a>
+</div>
+
+{% if datasets %}
+<table class="table">
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>이름</th>
+      <th>유형</th>
+      <th>파일 수</th>
+      <th>타겟 수</th>
+      <th>생성일</th>
+      <th>작업</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for ds in datasets %}
+    <tr>
+      <td>{{ ds.id }}</td>
+      <td><a href="/datasets/{{ ds.id }}">{{ ds.name }}</a></td>
+      <td>
+        {% if ds.source_type == 'upload' %}
+        <span class="badge badge-info">업로드</span>
+        {% else %}
+        <span class="badge badge-warning">로컬</span>
+        {% endif %}
+      </td>
+      <td>{{ ds.files|length }}</td>
+      <td>{{ ds.targets|length }}</td>
+      <td>{{ ds.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+      <td>
+        <a
+          href="/datasets/{{ ds.id }}"
+          class="btn btn-secondary"
+          style="padding: 0.3rem 0.8rem; font-size: 0.8rem"
+          >상세</a
+        >
+        <form
+          method="POST"
+          action="/datasets/{{ ds.id }}/delete"
+          style="display: inline"
+          onsubmit="return confirm('정말 삭제하시겠습니까?');"
+        >
+          <button
+            type="submit"
+            class="btn btn-danger"
+            style="padding: 0.3rem 0.8rem; font-size: 0.8rem"
+          >
+            삭제
+          </button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="card" style="text-align: center; padding: 3rem">
+  <p class="text-muted" style="font-size: 1.1rem">
+    등록된 데이터셋이 없습니다.
+  </p>
+  <a href="/datasets/upload" class="btn btn-primary" style="margin-top: 1rem"
+    >첫 데이터셋 업로드 →</a
+  >
+</div>
+{% endif %} {% endblock %}

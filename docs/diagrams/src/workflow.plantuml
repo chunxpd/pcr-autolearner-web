@@ -1,0 +1,50 @@
+@startuml workflow
+scale 1
+start
+if (has primer sequences?) then (yes)
+group blastn_path (automatic or manual)
+    :blastn;
+    fork
+    :on the target taxa;
+    fork again
+    :excluding the target taxa;
+    end fork
+    if (check specificity) then (high)
+        :download sequences\n(up/downstream of HSPs); 
+    else (low)
+        stop
+    endif
+end group
+else (no)
+group genbank_path
+    : manual search on genbank site NCBI;
+    : download sequences frome genbank;
+end group
+endif
+
+if (only blastn path runned?) then (yes)
+    : download_genebank.py ;
+else (no)
+    : merge all downloaded sequences ;
+endif
+
+repeat :Multiple Sequence Alignment (Clustal Omega) ;
+:Download the MSA result (.aln file) ;
+:Find homology Regions; 
+note right
+    Jalview on a local computer
+    ====
+    //manual selection//
+end note
+repeat while (check and adjust sequences?)
+
+:primer design with primer3;
+note right
+    Manually generate excel file.
+    // No need to IMPLEMENTATION //
+end note
+:primer optimzation with OligoAnalyzer;
+
+stop
+
+@enduml

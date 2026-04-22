@@ -1,0 +1,121 @@
+{% extends "base.html" %} {% block title %}{{ dataset.name }} - PCR
+Autolearner{% endblock %} {% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center">
+  <h1>{{ dataset.name }}</h1>
+  <div>
+    {% if targets %}
+    <a href="/datasets/{{ dataset.id }}/analysis" class="btn btn-success"
+      >그래프 분석 →</a
+    >
+    <a
+      href="/datasets/{{ dataset.id }}/clustering"
+      class="btn btn-primary"
+      style="background: #e67e22"
+      >Clustering →</a
+    >
+    {% endif %}
+    <a href="/datasets" class="btn btn-secondary">← 목록</a>
+  </div>
+</div>
+
+<!-- 데이터셋 정보 -->
+<div class="card mb-2">
+  <table style="width: 100%">
+    <tr>
+      <td style="width: 120px; font-weight: 600; color: #7f8c8d">유형</td>
+      <td>
+        {% if dataset.source_type == 'upload' %}
+        <span class="badge badge-info">업로드</span>
+        {% else %}
+        <span class="badge badge-warning">로컬 디렉토리</span>
+        {% endif %}
+      </td>
+    </tr>
+    {% if dataset.source_path %}
+    <tr>
+      <td style="font-weight: 600; color: #7f8c8d">경로</td>
+      <td style="font-family: monospace; font-size: 0.85rem">
+        {{ dataset.source_path }}
+      </td>
+    </tr>
+    {% endif %} {% if dataset.description %}
+    <tr>
+      <td style="font-weight: 600; color: #7f8c8d">설명</td>
+      <td>{{ dataset.description }}</td>
+    </tr>
+    {% endif %}
+    <tr>
+      <td style="font-weight: 600; color: #7f8c8d">생성일</td>
+      <td>{{ dataset.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+    </tr>
+  </table>
+</div>
+
+<!-- 타겟 목록 -->
+<h2>타겟 목록 ({{ targets|length }}개)</h2>
+{% if targets %}
+<table class="table">
+  <thead>
+    <tr>
+      <th>Target Name</th>
+      <th>샘플 수</th>
+      <th>Positive</th>
+      <th>Negative</th>
+      <th>작업</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for t in targets %}
+    <tr>
+      <td style="font-family: monospace">{{ t.target_name }}</td>
+      <td>{{ t.sample_count }}</td>
+      <td style="color: #27ae60">{{ t.positive_count }}</td>
+      <td style="color: #e74c3c">{{ t.negative_count }}</td>
+      <td>
+        <a
+          href="/datasets/{{ dataset.id }}/analysis?target={{ t.target_name }}"
+          class="btn btn-primary"
+          style="padding: 0.3rem 0.8rem; font-size: 0.8rem"
+        >
+          그래프 →
+        </a>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p class="text-muted">추출된 타겟이 없습니다.</p>
+{% endif %}
+
+<!-- 파일 목록 -->
+<h2>CSV 파일 목록 ({{ files|length }}개)</h2>
+<table class="table">
+  <thead>
+    <tr>
+      <th>파일명</th>
+      <th>버전</th>
+      <th>상태</th>
+      <th>행 수</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for f in files %}
+    <tr>
+      <td style="font-family: monospace; font-size: 0.85rem">
+        {{ f.filename }}
+      </td>
+      <td>{{ f.file_version or '-' }}</td>
+      <td>
+        {% if f.is_abnormal %}
+        <span class="badge badge-error">비정상</span>
+        {% else %}
+        <span class="badge badge-success">정상</span>
+        {% endif %}
+      </td>
+      <td>{{ f.row_count or '-' }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

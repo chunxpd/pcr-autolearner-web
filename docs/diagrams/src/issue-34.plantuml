@@ -1,0 +1,15 @@
+@startsalt
+
+{
+    Sequence | "                 "
+    options:   | { [] reverse }
+      
+      V
+      V
+      V
+
+    Sequence | "                 "
+    options:   | { [] reverse | [] megablast}
+
+}
+@endsalt

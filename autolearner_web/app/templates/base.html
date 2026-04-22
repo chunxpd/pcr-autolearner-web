@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{% block title %}PCR Autolearner{% endblock %}</title>
+
+    <!-- Plotly.js CDN (그래프용) -->
+    <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
+
+    <!-- 기본 스타일 -->
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/style.css') }}"
+    />
+
+    {% block head %}{% endblock %}
+  </head>
+  <body>
+    <!-- 네비게이션 바 -->
+    <nav class="navbar">
+      <div class="nav-brand">
+        <a href="/">PCR Autolearner Web</a>
+      </div>
+      <div class="nav-links">
+        <a href="/">대시보드</a>
+        <a href="/datasets">데이터셋</a>
+        <a href="/models">모델</a>
+        <a href="/prediction">예측</a>
+        <a href="/training/history">학습 이력</a>
+      </div>
+    </nav>
+
+    <!-- 메인 컨텐츠 -->
+    <main class="container">
+      {% with messages = get_flashed_messages(with_categories=true) %} {% if
+      messages %} {% for category, message in messages %}
+      <div class="alert alert-{{ category }}">
+        {{ message }}
+        <span class="alert-close" onclick="this.parentElement.remove()"
+          >&times;</span
+        >
+      </div>
+      {% endfor %} {% endif %} {% endwith %} {% block content %}{% endblock %}
+    </main>
+
+    <!-- 푸터 -->
+    <footer class="footer">
+      <p>PCR Autolearner Web MVP &copy; 2025</p>
+    </footer>
+
+    {% block scripts %}{% endblock %}
+  </body>
+</html>

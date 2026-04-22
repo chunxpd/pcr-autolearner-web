@@ -1,0 +1,759 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>OligoAnalyzer</class>
+ <widget class="QMainWindow" name="OligoAnalyzer">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1920</width>
+    <height>1080</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>MainWindow</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <widget class="QToolBox" name="toolBox">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>0</y>
+      <width>1431</width>
+      <height>841</height>
+     </rect>
+    </property>
+    <property name="currentIndex">
+     <number>0</number>
+    </property>
+    <widget class="QWidget" name="step0_page">
+     <property name="geometry">
+      <rect>
+       <x>0</x>
+       <y>0</y>
+       <width>1431</width>
+       <height>725</height>
+      </rect>
+     </property>
+     <attribute name="label">
+      <string>primer file upload</string>
+     </attribute>
+     <widget class="QPushButton" name="uploadButton">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>0</y>
+        <width>80</width>
+        <height>23</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>upload</string>
+      </property>
+     </widget>
+     <widget class="QTableWidget" name="uploadResultTable">
+      <property name="geometry">
+       <rect>
+        <x>-10</x>
+        <y>30</y>
+        <width>1451</width>
+        <height>671</height>
+       </rect>
+      </property>
+      <row>
+       <property name="text">
+        <string>1</string>
+       </property>
+      </row>
+      <column>
+       <property name="text">
+        <string>species</string>
+       </property>
+      </column>
+      <column>
+       <property name="text">
+        <string>type</string>
+       </property>
+      </column>
+      <column>
+       <property name="text">
+        <string>sequence</string>
+       </property>
+      </column>
+      <column>
+       <property name="text">
+        <string>length</string>
+       </property>
+      </column>
+      <column>
+       <property name="text">
+        <string>GC%</string>
+       </property>
+      </column>
+      <column>
+       <property name="text">
+        <string>Tm</string>
+       </property>
+      </column>
+      <item row="0" column="0">
+       <property name="text">
+        <string/>
+       </property>
+      </item>
+      <item row="0" column="1">
+       <property name="text">
+        <string/>
+       </property>
+      </item>
+      <item row="0" column="2">
+       <property name="text">
+        <string/>
+       </property>
+      </item>
+      <item row="0" column="3">
+       <property name="text">
+        <string/>
+       </property>
+      </item>
+      <item row="0" column="4">
+       <property name="text">
+        <string/>
+       </property>
+      </item>
+      <item row="0" column="5">
+       <property name="text">
+        <string/>
+       </property>
+      </item>
+     </widget>
+    </widget>
+    <widget class="QWidget" name="step1_page">
+     <property name="geometry">
+      <rect>
+       <x>0</x>
+       <y>0</y>
+       <width>1431</width>
+       <height>725</height>
+      </rect>
+     </property>
+     <attribute name="label">
+      <string>Step1: melting temperature filter</string>
+     </attribute>
+     <widget class="QLabel" name="step2_label">
+      <property name="geometry">
+       <rect>
+        <x>20</x>
+        <y>10</y>
+        <width>181</width>
+        <height>16</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>fw/rv Tm range (Celsius):</string>
+      </property>
+     </widget>
+     <widget class="QLineEdit" name="tm_from_inbox">
+      <property name="geometry">
+       <rect>
+        <x>210</x>
+        <y>10</y>
+        <width>113</width>
+        <height>23</height>
+       </rect>
+      </property>
+     </widget>
+     <widget class="QLineEdit" name="tm_to_inbox">
+      <property name="geometry">
+       <rect>
+        <x>330</x>
+        <y>10</y>
+        <width>113</width>
+        <height>23</height>
+       </rect>
+      </property>
+     </widget>
+     <widget class="QLabel" name="step1_from_label">
+      <property name="geometry">
+       <rect>
+        <x>210</x>
+        <y>0</y>
+        <width>57</width>
+        <height>15</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>from</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="step1_to_label">
+      <property name="geometry">
+       <rect>
+        <x>340</x>
+        <y>0</y>
+        <width>57</width>
+        <height>15</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>to</string>
+      </property>
+     </widget>
+     <widget class="QTabWidget" name="step1_result_tabWidget">
+      <property name="geometry">
+       <rect>
+        <x>20</x>
+        <y>130</y>
+        <width>1401</width>
+        <height>591</height>
+       </rect>
+      </property>
+      <property name="currentIndex">
+       <number>-1</number>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="step1_run_button">
+      <property name="geometry">
+       <rect>
+        <x>20</x>
+        <y>100</y>
+        <width>80</width>
+        <height>23</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>step1 run</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="step2_label_probe">
+      <property name="geometry">
+       <rect>
+        <x>20</x>
+        <y>60</y>
+        <width>181</width>
+        <height>16</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>probe Tm range (Celsius):</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="step1_from_label_2">
+      <property name="geometry">
+       <rect>
+        <x>210</x>
+        <y>40</y>
+        <width>57</width>
+        <height>15</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>from</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="step1_to_label_2">
+      <property name="geometry">
+       <rect>
+        <x>330</x>
+        <y>40</y>
+        <width>57</width>
+        <height>15</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>to</string>
+      </property>
+     </widget>
+     <widget class="QLineEdit" name="tm_from_inbox_probe">
+      <property name="geometry">
+       <rect>
+        <x>210</x>
+        <y>60</y>
+        <width>113</width>
+        <height>23</height>
+       </rect>
+      </property>
+     </widget>
+     <widget class="QLineEdit" name="tm_to_inbox_probe">
+      <property name="geometry">
+       <rect>
+        <x>330</x>
+        <y>60</y>
+        <width>113</width>
+        <height>23</height>
+       </rect>
+      </property>
+     </widget>
+     <widget class="QLabel" name="step2_label_3">
+      <property name="geometry">
+       <rect>
+        <x>490</x>
+        <y>10</y>
+        <width>131</width>
+        <height>16</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>salt (Na+) conc.(mM)</string>
+      </property>
+     </widget>
+     <widget class="QLineEdit" name="step1_na_conc">
+      <property name="geometry">
+       <rect>
+        <x>630</x>
+        <y>10</y>
+        <width>113</width>
+        <height>23</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>50</string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="step1_excel_export">
+      <property name="geometry">
+       <rect>
+        <x>1340</x>
+        <y>100</y>
+        <width>80</width>
+        <height>23</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>excel export</string>
+      </property>
+     </widget>
+    </widget>
+    <widget class="QWidget" name="step2_page">
+     <property name="geometry">
+      <rect>
+       <x>0</x>
+       <y>0</y>
+       <width>1431</width>
+       <height>725</height>
+      </rect>
+     </property>
+     <attribute name="label">
+      <string>Step2: homodimer and hairpin filter</string>
+     </attribute>
+     <widget class="QTabWidget" name="step2_result_tabWidget">
+      <property name="geometry">
+       <rect>
+        <x>0</x>
+        <y>60</y>
+        <width>1441</width>
+        <height>621</height>
+       </rect>
+      </property>
+      <property name="currentIndex">
+       <number>0</number>
+      </property>
+      <widget class="QWidget" name="tab_5">
+       <attribute name="title">
+        <string>pan candida</string>
+       </attribute>
+      </widget>
+      <widget class="QWidget" name="tab_7">
+       <attribute name="title">
+        <string>species2</string>
+       </attribute>
+      </widget>
+      <widget class="QWidget" name="tab_6">
+       <attribute name="title">
+        <string>species3</string>
+       </attribute>
+      </widget>
+      <widget class="QWidget" name="tab_8">
+       <attribute name="title">
+        <string>...</string>
+       </attribute>
+      </widget>
+     </widget>
+     <widget class="QPushButton" name="step2_run_button">
+      <property name="geometry">
+       <rect>
+        <x>160</x>
+        <y>10</y>
+        <width>80</width>
+        <height>23</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>step2 run</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label">
+      <property name="geometry">
+       <rect>
+        <x>50</x>
+        <y>10</y>
+        <width>57</width>
+        <height>15</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+     </widget>
+     <widget class="QLabel" name="step2_label_2">
+      <property name="geometry">
+       <rect>
+        <x>20</x>
+        <y>-10</y>
+        <width>131</width>
+        <height>61</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>total XXX sequences</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="step2_status_label">
+      <property name="geometry">
+       <rect>
+        <x>380</x>
+        <y>10</y>
+        <width>701</width>
+        <height>16</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>status: </string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="step2_select_done">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>700</y>
+        <width>131</width>
+        <height>23</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>selection done</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="step2_select_label">
+      <property name="geometry">
+       <rect>
+        <x>170</x>
+        <y>700</y>
+        <width>681</width>
+        <height>16</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>selection result:</string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="step2_set_original_button">
+      <property name="geometry">
+       <rect>
+        <x>1370</x>
+        <y>690</y>
+        <width>80</width>
+        <height>23</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>to original</string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="step2_excel_export">
+      <property name="geometry">
+       <rect>
+        <x>1350</x>
+        <y>10</y>
+        <width>80</width>
+        <height>23</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>excel export</string>
+      </property>
+     </widget>
+    </widget>
+    <widget class="QWidget" name="step3_page">
+     <property name="geometry">
+      <rect>
+       <x>0</x>
+       <y>0</y>
+       <width>1431</width>
+       <height>725</height>
+      </rect>
+     </property>
+     <attribute name="label">
+      <string>Step3: heterodimer filter</string>
+     </attribute>
+     <widget class="QLabel" name="step3_label">
+      <property name="geometry">
+       <rect>
+        <x>20</x>
+        <y>0</y>
+        <width>141</width>
+        <height>16</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>total YYY sequences</string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="step3_run_button">
+      <property name="geometry">
+       <rect>
+        <x>180</x>
+        <y>0</y>
+        <width>80</width>
+        <height>23</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>step3 run</string>
+      </property>
+     </widget>
+     <widget class="QTabWidget" name="step3_result_tabWidget">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>30</y>
+        <width>1401</width>
+        <height>671</height>
+       </rect>
+      </property>
+      <property name="currentIndex">
+       <number>0</number>
+      </property>
+      <widget class="QWidget" name="tab_9">
+       <attribute name="title">
+        <string>pan candida</string>
+       </attribute>
+       <widget class="QTableWidget" name="step3_result_table">
+        <property name="geometry">
+         <rect>
+          <x>0</x>
+          <y>0</y>
+          <width>1381</width>
+          <height>631</height>
+         </rect>
+        </property>
+        <row>
+         <property name="text">
+          <string>1</string>
+         </property>
+        </row>
+        <row>
+         <property name="text">
+          <string>2</string>
+         </property>
+        </row>
+        <row>
+         <property name="text">
+          <string>3</string>
+         </property>
+        </row>
+        <row>
+         <property name="text">
+          <string>4</string>
+         </property>
+        </row>
+        <row>
+         <property name="text">
+          <string>5</string>
+         </property>
+        </row>
+        <row>
+         <property name="text">
+          <string>6</string>
+         </property>
+        </row>
+        <row>
+         <property name="text">
+          <string>7</string>
+         </property>
+        </row>
+        <row>
+         <property name="text">
+          <string>8</string>
+         </property>
+        </row>
+        <row>
+         <property name="text">
+          <string>9</string>
+         </property>
+        </row>
+        <row>
+         <property name="text">
+          <string>10</string>
+         </property>
+        </row>
+        <column>
+         <property name="text">
+          <string>name</string>
+         </property>
+        </column>
+        <column>
+         <property name="text">
+          <string>sequence</string>
+         </property>
+        </column>
+        <column>
+         <property name="text">
+          <string>length</string>
+         </property>
+        </column>
+        <column>
+         <property name="text">
+          <string>New Column</string>
+         </property>
+        </column>
+        <column>
+         <property name="text">
+          <string>Tm</string>
+         </property>
+        </column>
+        <column>
+         <property name="text">
+          <string>homodimer</string>
+         </property>
+        </column>
+        <column>
+         <property name="text">
+          <string>het dimer1</string>
+         </property>
+        </column>
+        <column>
+         <property name="text">
+          <string>het dimer2</string>
+         </property>
+        </column>
+        <column>
+         <property name="text">
+          <string>het dimer3</string>
+         </property>
+        </column>
+        <column>
+         <property name="text">
+          <string>...</string>
+         </property>
+        </column>
+        <item row="0" column="0">
+         <property name="text">
+          <string>foward1</string>
+         </property>
+        </item>
+        <item row="0" column="6">
+         <property name="text">
+          <string/>
+         </property>
+        </item>
+        <item row="1" column="0">
+         <property name="text">
+          <string>forward2</string>
+         </property>
+        </item>
+        <item row="1" column="6">
+         <property name="text">
+          <string/>
+         </property>
+        </item>
+        <item row="2" column="0">
+         <property name="text">
+          <string>...</string>
+         </property>
+        </item>
+        <item row="2" column="6">
+         <property name="text">
+          <string/>
+         </property>
+        </item>
+        <item row="3" column="0">
+         <property name="text">
+          <string>reverse1</string>
+         </property>
+        </item>
+        <item row="3" column="6">
+         <property name="text">
+          <string/>
+         </property>
+        </item>
+        <item row="4" column="0">
+         <property name="text">
+          <string>reverse2</string>
+         </property>
+        </item>
+        <item row="5" column="0">
+         <property name="text">
+          <string>...</string>
+         </property>
+        </item>
+        <item row="6" column="0">
+         <property name="text">
+          <string>probe1</string>
+         </property>
+        </item>
+        <item row="7" column="0">
+         <property name="text">
+          <string>probe2</string>
+         </property>
+        </item>
+        <item row="8" column="0">
+         <property name="text">
+          <string>...</string>
+         </property>
+        </item>
+       </widget>
+      </widget>
+      <widget class="QWidget" name="tab_10">
+       <attribute name="title">
+        <string>species 2</string>
+       </attribute>
+      </widget>
+      <widget class="QWidget" name="tab_11">
+       <attribute name="title">
+        <string>...</string>
+       </attribute>
+      </widget>
+     </widget>
+     <widget class="QPushButton" name="step3_excel_export">
+      <property name="geometry">
+       <rect>
+        <x>1330</x>
+        <y>0</y>
+        <width>80</width>
+        <height>23</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>excel export</string>
+      </property>
+     </widget>
+    </widget>
+   </widget>
+  </widget>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>1920</width>
+     <height>20</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menuoligoanalyzer">
+    <property name="title">
+     <string>oligoanalyzer</string>
+    </property>
+    <addaction name="actionExit"/>
+   </widget>
+   <addaction name="menuoligoanalyzer"/>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+  <action name="actionExit">
+   <property name="text">
+    <string>Exit</string>
+   </property>
+  </action>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

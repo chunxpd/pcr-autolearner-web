@@ -1,0 +1,51 @@
+{% extends "base.html" %} {% block title %}대시보드 - PCR Autolearner{% endblock
+%} {% block content %}
+<h1>PCR Autolearner 대시보드</h1>
+
+<div class="dashboard-cards">
+  <div class="card">
+    <h3>데이터셋</h3>
+    <p class="card-number">{{ dataset_count }}</p>
+    <a href="/datasets">목록 보기 →</a>
+  </div>
+  <div class="card">
+    <h3>저장된 모델</h3>
+    <p class="card-number">{{ model_count }}</p>
+    <a href="/models">목록 보기 →</a>
+  </div>
+  <div class="card">
+    <h3>빠른 시작</h3>
+    <p>CSV 파일을 업로드하여 분석을 시작하세요</p>
+    <a href="/datasets/upload" class="btn btn-primary" style="color: white"
+      >데이터 업로드 →</a
+    >
+  </div>
+</div>
+
+<h2>최근 활동 로그</h2>
+{% if recent_logs %}
+<table class="table">
+  <thead>
+    <tr>
+      <th>시간</th>
+      <th>레벨</th>
+      <th>카테고리</th>
+      <th>메시지</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for log in recent_logs %}
+    <tr>
+      <td>{{ log.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+      <td>
+        <span class="badge badge-{{ log.level|lower }}">{{ log.level }}</span>
+      </td>
+      <td>{{ log.category or '-' }}</td>
+      <td>{{ log.message }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p class="text-muted">아직 활동 기록이 없습니다.</p>
+{% endif %} {% endblock %}

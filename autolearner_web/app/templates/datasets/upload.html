@@ -1,0 +1,299 @@
+{% extends "base.html" %} {% block title %}데이터 업로드 - PCR Autolearner{%
+endblock %} {% block content %}
+<h1>데이터셋 업로드</h1>
+
+<div class="card" style="max-width: 700px">
+  <form method="POST" enctype="multipart/form-data" id="uploadForm">
+    <div class="form-group">
+      <label for="dataset_name">데이터셋 이름 *</label>
+      <input
+        type="text"
+        id="dataset_name"
+        name="dataset_name"
+        class="form-control"
+        placeholder="예: HLA_20250601"
+        required
+      />
+    </div>
+
+    <div class="form-group">
+      <label for="description">설명 (선택)</label>
+      <input
+        type="text"
+        id="description"
+        name="description"
+        class="form-control"
+        placeholder="예: 6월 1일 HLA 실험 데이터"
+      />
+    </div>
+
+    <div class="form-group">
+      <label>업로드 방식</label>
+      <div style="margin-top: 0.5rem">
+        <label style="margin-right: 2rem; font-weight: normal">
+          <input
+            type="radio"
+            name="upload_type"
+            value="file"
+            checked
+            onchange="toggleUploadType()"
+          />
+          CSV/ZIP 파일 업로드
+        </label>
+        <label style="font-weight: normal">
+          <input
+            type="radio"
+            name="upload_type"
+            value="local_dir"
+            onchange="toggleUploadType()"
+          />
+          서버 로컬 디렉토리 등록
+        </label>
+      </div>
+    </div>
+
+    <!-- 파일 업로드 영역 -->
+    <div id="fileUploadArea">
+      <div class="form-group">
+        <label for="files">파일 선택 (CSV 또는 ZIP, 다중 선택 가능)</label>
+        <input
+          type="file"
+          id="files"
+          name="files"
+          class="form-control"
+          multiple
+          accept=".csv,.zip"
+        />
+        <small style="color: #7f8c8d">
+          최대 500MB. ZIP 파일 안의 CSV도 자동으로 추출됩니다.
+        </small>
+      </div>
+    </div>
+
+    <!-- 로컬 디렉토리 입력 영역 -->
+    <div id="localDirArea" style="display: none">
+      <div class="form-group">
+        <label>서버 내 디렉토리 경로</label>
+        <div style="display: flex; gap: 0.5rem">
+          <input
+            type="text"
+            id="dir_path"
+            name="dir_path"
+            class="form-control"
+            placeholder="예: D:\data\HLA"
+            style="flex: 1"
+          />
+          <button
+            type="button"
+            class="btn btn-secondary"
+            onclick="openFolderBrowser()"
+          >
+            폴더 찾기
+          </button>
+        </div>
+        <small style="color: #7f8c8d">
+          직접 입력하거나 "폴더 찾기"로 탐색하세요.
+        </small>
+      </div>
+
+      <!-- 폴더 탐색기 -->
+      <div
+        id="folderBrowser"
+        style="
+          display: none;
+          border: 1px solid #ddd;
+          border-radius: 6px;
+          margin-top: 0.5rem;
+          max-height: 350px;
+          overflow: hidden;
+        "
+      >
+        <!-- 현재 경로 표시 -->
+        <div
+          id="browserPath"
+          style="
+            padding: 0.5rem 0.8rem;
+            background: #f8f9fa;
+            border-bottom: 1px solid #ddd;
+            font-size: 0.85rem;
+            font-family: monospace;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+          "
+        >
+          <span id="browserPathText">...</span>
+          <span
+            id="browserCsvCount"
+            style="margin-left: auto; color: #27ae60; font-size: 0.8rem"
+          ></span>
+        </div>
+        <!-- 폴더 리스트 -->
+        <div id="browserList" style="max-height: 280px; overflow-y: auto"></div>
+        <!-- 하단 버튼 -->
+        <div
+          style="
+            padding: 0.5rem 0.8rem;
+            border-top: 1px solid #ddd;
+            background: #f8f9fa;
+            display: flex;
+            gap: 0.5rem;
+          "
+        >
+          <button
+            type="button"
+            class="btn btn-primary"
+            onclick="selectCurrentFolder()"
+            style="padding: 0.3rem 1rem; font-size: 0.85rem"
+          >
+            이 폴더 선택
+          </button>
+          <button
+            type="button"
+            class="btn btn-secondary"
+            onclick="closeFolderBrowser()"
+            style="padding: 0.3rem 1rem; font-size: 0.85rem"
+          >
+            닫기
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top: 1.5rem">
+      <button type="submit" class="btn btn-primary" id="submitBtn">
+        업로드
+      </button>
+      <a href="/datasets" class="btn btn-secondary" style="margin-left: 0.5rem"
+        >취소</a
+      >
+    </div>
+  </form>
+</div>
+
+<script>
+  var currentBrowsePath = "";
+
+  function toggleUploadType() {
+    var uploadType = document.querySelector(
+      'input[name="upload_type"]:checked',
+    ).value;
+    document.getElementById("fileUploadArea").style.display =
+      uploadType === "file" ? "block" : "none";
+    document.getElementById("localDirArea").style.display =
+      uploadType === "local_dir" ? "block" : "none";
+  }
+
+  function openFolderBrowser() {
+    document.getElementById("folderBrowser").style.display = "block";
+    browseTo("");
+  }
+
+  function closeFolderBrowser() {
+    document.getElementById("folderBrowser").style.display = "none";
+  }
+
+  function browseTo(path) {
+    currentBrowsePath = path;
+    var list = document.getElementById("browserList");
+    list.innerHTML =
+      '<div style="padding: 1rem; color: #7f8c8d;">로딩 중...</div>';
+
+    fetch("/datasets/browse-dir?path=" + encodeURIComponent(path))
+      .then(function (r) {
+        return r.json();
+      })
+      .then(function (data) {
+        if (data.error) {
+          list.innerHTML =
+            '<div style="padding: 1rem; color: #e74c3c;">' +
+            data.error +
+            "</div>";
+          return;
+        }
+
+        currentBrowsePath = data.current;
+        document.getElementById("browserPathText").textContent =
+          data.current || "내 PC (드라이브 선택)";
+
+        if (data.csv_count !== undefined && data.csv_count > 0) {
+          document.getElementById("browserCsvCount").textContent =
+            "CSV " + data.csv_count + "개";
+        } else {
+          document.getElementById("browserCsvCount").textContent = "";
+        }
+
+        list.innerHTML = "";
+
+        // 상위 폴더 버튼
+        if (data.parent !== undefined) {
+          var upItem = document.createElement("div");
+          upItem.style.cssText =
+            "padding: 0.4rem 0.8rem; cursor: pointer; border-bottom: 1px solid #f0f0f0; display: flex; align-items: center; gap: 0.5rem;";
+          upItem.innerHTML =
+            '<span style="font-size: 1.1rem;">⬆️</span> <span style="color: #3498db;">.. (상위 폴더)</span>';
+          upItem.onclick = function () {
+            browseTo(data.parent);
+          };
+          upItem.onmouseover = function () {
+            this.style.background = "#f0f7ff";
+          };
+          upItem.onmouseout = function () {
+            this.style.background = "";
+          };
+          list.appendChild(upItem);
+        }
+
+        // 폴더/드라이브 목록
+        data.items.forEach(function (item) {
+          var div = document.createElement("div");
+          div.style.cssText =
+            "padding: 0.4rem 0.8rem; cursor: pointer; border-bottom: 1px solid #f0f0f0; display: flex; align-items: center; gap: 0.5rem;";
+
+          var icon = item.type === "drive" ? "💾" : "📁";
+          div.innerHTML =
+            '<span style="font-size: 1.1rem;">' +
+            icon +
+            "</span> <span>" +
+            item.name +
+            "</span>";
+
+          div.onclick = function () {
+            browseTo(item.path);
+          };
+          div.onmouseover = function () {
+            this.style.background = "#f0f7ff";
+          };
+          div.onmouseout = function () {
+            this.style.background = "";
+          };
+          list.appendChild(div);
+        });
+
+        if (data.items.length === 0 && !data.parent) {
+          list.innerHTML =
+            '<div style="padding: 1rem; color: #7f8c8d;">빈 폴더입니다.</div>';
+        }
+      })
+      .catch(function (err) {
+        list.innerHTML =
+          '<div style="padding: 1rem; color: #e74c3c;">에러: ' +
+          err.message +
+          "</div>";
+      });
+  }
+
+  function selectCurrentFolder() {
+    if (currentBrowsePath) {
+      document.getElementById("dir_path").value = currentBrowsePath;
+      closeFolderBrowser();
+    }
+  }
+
+  document.getElementById("uploadForm").addEventListener("submit", function () {
+    var btn = document.getElementById("submitBtn");
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> 처리 중...';
+  });
+</script>
+{% endblock %}

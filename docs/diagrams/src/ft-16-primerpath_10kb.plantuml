@@ -1,0 +1,23 @@
+@startuml ft-16-primerpath_10kb
+
+actor Query
+control Server
+database BLASTn
+database Entrez
+
+Query -> Server: Action
+activate Server
+Server -> BLASTn : Send query\n- primer sequence\n- taxid list
+BLASTn -> Server : blastn results (format: blast xml)
+Server -> Entrez : Query gb file of the gbid
+Entrez -> Server : Fetch and download Genebank file (format: gb)
+Server -> Server : Parse sequence, gene, location,\n and strand of the gb
+note right
+Conditions:
+* download the full sequence of which length < 10Kb
+* download the one up/down stream of flanking genes of the HSP
+end note
+
+deactivate Server
+
+@enduml

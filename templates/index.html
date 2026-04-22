@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.1/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-iYQeCzEYFbKjA/T2uDLTpkwGzCiq6soy8tYaI1GyVh/UjpbCx/TYkiZhlZB6+fzT" crossorigin="anonymous">
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-OERcA2EqjJCMA+/3y+gxIOqMEjwtxJY7qPCqsdltbNJuaOe923+mo//f6V8Qbsw3"
+        crossorigin="anonymous"></script>
+    <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+    <script src="{{url_for('static',filename='javascript/index.js')}}"></script>
+    <script lang="javascript">
+        // taxid 자동 완성 용
+        $(function () {	//화면 로딩후 시작
+            function split(val) {
+                return val.split(/,\s*/);
+            }
+            function extractLast(term) {
+                return split(term).pop();
+            }
+            $("#in_exclude_txids")
+                .on("keydown", function (event) {
+                    if (event.keyCode === $.ui.keyCode.TAB &&
+                        $(this).autocomplete("instance").menu.active) {
+                        event.preventDefault();
+                    }
+                })
+                .autocomplete({  //오토 컴플릿트 시작
+                    source: function (request, response) {
+                        // 설명: request.term 은 $('#in_exclude_txids') 에 들어오는 실시간 입력 값이다.
+                        $.getJSON(
+                            "{{url_for('taxid_search')}}",
+                            { qstr: extractLast(request.term) },
+                            function (data) {
+                                response(data.json_list);
+                            }
+                        );
+                    },
+                    focus: function (event, ui) { // 방향키로 자동완성단어 선택 가능하게 만들어줌
+                        return false;
+                    },
+                    minLength: 3,// 최소 글자수
+                    delay: 100,	//autocomplete 딜레이 시간(ms)
+                    select: function (event, ui) {
+                        var terms = split(this.value);
+                        // remove the current input
+                        terms.pop();
+                        // add the selected item
+                        terms.push(ui.item.value);
+                        // add placeholder to get the comma-and-space at the end
+                        terms.push("");
+                        this.value = terms.join(", ");
+                        return false;
+                    }
+                    //disabled: true, //자동완성 기능 끄기
+                });
+        });
+        function taxid_regexp(string) {
+            const re = /.*(taxid: \n+)/
+            string.match(re)
+        }
+
+    </script>
+    <link href="{{url_for('static', filename='css/heroes.css')}}">
+    <link href="{{url_for('static', filename='css/index_style.css')}}">
+</head>
+
+<body>
+    <div class="container col-xxl-8 px-4 py-5">
+        <div class="row flex-lg-row-reverse align-items-center g-5 py-5">
+            <div class="col-md-10 mx-auto col-lg-5">
+
+                <form class="p-4 p-md-5 border rounded-3 bg-light was-validated" action="blastn" id="blastn"
+                    method="get">
+                    {% set max_file_num=100 %}
+
+                    <div class="form-floating mb-3">
+                        <textarea class="form-control" id="in_exclude_txids" name="in_exclude_txids"
+                            placeholder="<tax name>"></textarea>
+                        <label for="in_exclude_txids">제외할 종 이름을 검색 (3글자 자동완성)</label>
+                    </div>
+                    <hr>
+                    <button type="button" class="btn btn-secondary"
+                        onclick="add_file('{{max_file_num}}');">서열추가</button>
+                    <button type="button" class="btn btn-secondary"
+                        onclick="del_file('{{max_file_num}}');">서열제거</button>
+
+                    {% for iii in range(1, max_file_num+1): %}
+                    <div class="form-floating mb-3">
+                        {% if (iii==1) %}
+                        {% set required_str="required" %}
+                        {% else %}
+                        {% set required_str="" %}
+                        {%endif%}
+                        <input type="text" class="form-control" id="in_primer_sequence{{iii}}"
+                            name="in_primer_sequence{{iii}}" placeholder="<primer sequence>"
+                            onkeyup="rm_whitespace('in_primer_sequence{{iii}}');" {{required_str}}
+                            style="display:none;">
+                        <label for="in_primer_sequence{{iii}}" id="in_primer_sequence_label{{iii}}"
+                            style="display:none;">primer {{iii}}</label>
+                    </div>
+                    <div class="checkbox mb-3" id="in_primer_sequence_chbox{{iii}}" style="display:none;">
+                        <label>
+                            <input type="checkbox" id="in_primer_sequence{{iii}}_reverseq"
+                                name="in_primer_sequence{{iii}}_reverseq"> check reverse{{iii}}
+                            <input type="checkbox" id="in_primer_sequence{{iii}}_megablastq"
+                                name="in_primer_sequence{{iii}}_megablastq"> check
+                            megablast{{iii}}
+                        </label>
+                    </div>
+                    {% endfor %}
+
+
+
+                    <hr class="my-4">
+                    <button class="w-100 btn btn-lg btn-primary" type="submit">blastn 실행</button>
+
+                </form>
+            </div>
+
+            <div class="col-lg-6">
+                <h1 class="display-5 fw-bold lh-1 mb-3">blastn_path 시작 </h1>
+                <p class="lead">입력한 프라이머 서열을 바탕으로 blastn 을 실행합니다.<br>
+                    최대 {{max_file_num}}개까지 서열을 넣을 수 있고 서열 입력시에 reverse 유무를 확인해 줍니다.</p>
+                <p class="lead"> primer 서열 예) gatgctcgcaaccactatcca</p>
+                <div class="d-grid gap-2 d-md-flex justify-content-md-start">
+                    <button type="button" class="btn btn-primary btn-lg px-4 me-md-2"
+                        onclick="populate_example()">예제1</button>
+                    <button type="button" class="btn btn-primary btn-lg px-4 me-md-2"
+                        onclick="populate_example2()">예제2</button>
+
+                </div>
+                <div class="overflow-hidden" style="max-height: 30vh;">
+                    <div class="container px-5">
+                        <img src="{{url_for('static', filename='imgs/workflow.png')}}"
+                            class="img-fluid border rounded-3 shadow-lg mb-4" alt="Example image" width="700"
+                            height="500" loading="lazy">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</body>
+
+</html>

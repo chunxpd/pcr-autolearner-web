@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <script src="https://code.jquery.com/jquery-3.5.0.js"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/index_style.css') }}">
+</head>
+
+<body>
+    <h5>ncbi id list :</h5>
+    {% set primer_seqs = data %}
+    {% set num_primers = primer_seqs|length %}
+    total {{primer_seqs|length}} files
+    {% for i in range(num_primers): %}
+    <li>{{primer_seqs[i]}}</li>
+    {% endfor %}
+
+    <h5>config:</h5>
+    {% for k, v in config.items(): %}
+    <li>{{k}}:{{v}}</li>
+    {% endfor %}
+    <hr>
+    <button id="dw_genebank">download fasta</button>
+    <p>
+    <div id="gb_download_res"></div>
+    </p>
+    </div>
+
+    <script>
+        var isRun = 0;
+        $("#dw_genebank").click(function () {
+            if (isRun > 0) {
+                // ajax 실행 중에 중복해서 실행 되지 않게 한다.
+                alert("genebank 내려받는 중");
+                return;
+            }
+            $.ajax({
+                type: 'POST',
+                url: '{{url_for("download_genebank")}}',
+                data: JSON.stringify({
+                    "jobid": '{{config["jobid"]}}',
+                    "primer_seqs": JSON.parse('{{data|tojson}}'),
+                    "testq": false
+                }),
+                dataType: 'JSON',
+                contentType: "application/json",
+                success: function (data) {
+                    jobid = '{{config["jobid"]}}'
+                    html_cont = ""
+                    for (var key in data) {
+                        html_cont += "<a href=" +
+                            '{{url_for("local_download", jobid="__JOBID__", primerseq="__PRIMERSEQ__")}}'.replace("__JOBID__", jobid).replace("__PRIMERSEQ__", key) +
+                            '>' + data[key] + "</a><br>"
+                    }
+                    console.log(html_cont)
+                    $("#gb_download_res").html(
+                        html_cont)
+                },
+                beforeSend: function () {
+                    isRun = isRun + 1; // ajax 실행 중에 중복해서 실행 되지 않게 한다.
+                    // genebank 파일에서 현재까지 내려받은 레코드의 수를 반환한다.
+                    const init_time = new Date();
+                    interval = setInterval(function () {
+                        $.ajax({
+                            type: 'POST',
+                            url: '{{url_for("sub_download_genebank_cnt")}}',
+                            data: JSON.stringify({
+                                "jobid": '{{config["jobid"]}}',
+                                "primer_seqs": JSON.parse('{{data|tojson}}'),
+                            }),
+                            cache: false,
+                            dataType: 'JSON',
+                            contentType: "application/json",
+                            success: function (cnt) {
+                                console.log(cnt)
+                                outstr = "start time: " + init_time.toString() + "<br />";
+                                for (var primer in cnt) {
+                                    outstr += primer + "<br /><ul>" + "<li>" + cnt[primer]['CUR_STEP'] + "</li>";
+                                    outstr += "<li>예상 소요 시간: " + cnt[primer]['EST_TIME(s)'] / 3600 + "시간</li></ul>"
+                                }
+                                $("#gb_download_res").html(outstr)
+                            },
+                            error: function (request, status, error) {
+                                console.log('ajax error of cnt:[' + status + '][' + error + ']')
+                            }
+                        })
+                    }, 10000);
+                },
+                complete: function () {
+                    isRun = isRun - 1;
+                    $("#gb_download_res").show();
+                    // $("#msa").show();
+                    clearInterval(interval);
+                },
+                error: function (request, status, error) {
+                    alert('ajax error:[' + status + '][' + error + ']');
+                }
+            })
+        })
+
+    </script>
+</body>
+
+</html>

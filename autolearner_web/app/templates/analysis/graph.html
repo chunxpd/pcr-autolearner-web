@@ -1,0 +1,387 @@
+{% extends "base.html" %}
+{% block title %}그래프 분석 - {{ dataset.name }}{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center;">
+    <h1>그래프 분석: {{ dataset.name }}</h1>
+    <a href="/datasets/{{ dataset.id }}" class="btn btn-secondary">← 상세로 돌아가기</a>
+</div>
+
+<!-- 컨트롤 패널 -->
+<div class="card mb-2">
+    <div style="display: flex; gap: 1.5rem; align-items: flex-end; flex-wrap: wrap;">
+        <!-- 타겟 선택 -->
+        <div class="form-group" style="margin-bottom: 0; min-width: 250px;">
+            <label for="targetSelect">Target 선택</label>
+            <select id="targetSelect" class="form-control" onchange="loadGraph()">
+                <option value="">-- 타겟을 선택하세요 --</option>
+                {% for t in targets %}
+                <option value="{{ t.target_name }}"
+                    {{ "selected" if t.target_name == selected_target else "" }}>
+                    {{ t.target_name }} ({{ t.sample_count }}개)
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <!-- 전처리 버튼 -->
+        <div style="display: flex; gap: 0.5rem;">
+            <button class="btn btn-primary" onclick="loadGraph('raw')" id="btnRaw">Raw</button>
+            <button class="btn btn-secondary" onclick="loadGraph('baseline')" id="btnBaseline">Baseline Sub.</button>
+            <button class="btn btn-secondary" onclick="loadGraph('normalize')" id="btnNormalize">Normalize</button>
+            <button class="btn btn-secondary" onclick="showAnomalyDialog()" id="btnAnomaly" style="background: #8e44ad; color: white;">Anomaly Detection</button>
+        </div>
+    </div>
+
+    <!-- Y축 범위 설정 -->
+    <div style="display: flex; gap: 0.5rem; align-items: flex-end; margin-top: 0.8rem;">
+        <label style="font-weight: 600; font-size: 0.85rem; margin-bottom: 0.3rem;">Y-Axis Range:</label>
+        <input type="number" id="yMin" class="form-control" style="width: 120px;" placeholder="Min">
+        <input type="number" id="yMax" class="form-control" style="width: 120px;" placeholder="Max">
+        <button class="btn btn-secondary" onclick="setYRange()" style="padding: 0.4rem 0.8rem;">Set Y-Axis Range</button>
+        <button class="btn btn-secondary" onclick="resetYRange()" style="padding: 0.4rem 0.8rem;">Reset</button>
+        <div id="statusArea" style="font-size: 0.85rem; color: #7f8c8d; margin-left: 1rem;">
+            타겟을 선택하세요.
+        </div>
+    </div>
+</div>
+
+<!-- 메인 레이아웃: 그래프 + 우측 라벨 리스트 -->
+<div style="display: flex; gap: 1rem;">
+    <!-- 그래프 영역 -->
+    <div id="graphContainer" class="card" style="flex: 1; min-height: 550px; padding: 1rem;">
+        <div id="plotArea" style="width: 100%; height: 550px;"></div>
+    </div>
+
+    <!-- 우측 라벨 리스트 (곡선 on/off) -->
+    <div id="labelPanel" class="card" style="width: 220px; max-height: 600px; overflow-y: auto; padding: 0.5rem; display: none;">
+        <div style="font-weight: 600; font-size: 0.85rem; padding: 0.3rem; border-bottom: 1px solid #eee; margin-bottom: 0.3rem;">
+            샘플 목록
+            <span style="float: right; cursor: pointer; font-size: 0.75rem; color: #3498db;" onclick="toggleAllTraces()">전체 on/off</span>
+        </div>
+        <div id="labelList"></div>
+    </div>
+</div>
+
+<!-- Anomaly threshold 다이얼로그 -->
+<div id="anomalyDialog" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); z-index: 1000; justify-content: center; align-items: center;">
+    <div class="card" style="padding: 2rem; min-width: 400px;">
+        <h3 style="margin-bottom: 1rem;">Anomaly Detection</h3>
+        <div class="form-group">
+            <label for="anomalyThreshold">Threshold (absolute error)</label>
+            <input type="number" id="anomalyThreshold" class="form-control" value="0.01" step="0.001" min="0">
+        </div>
+        <div style="margin-top: 1rem; display: flex; gap: 0.5rem;">
+            <button class="btn btn-primary" onclick="runAnomaly()">탐지 실행</button>
+            <button class="btn btn-secondary" onclick="hideAnomalyDialog()">Cancel</button>
+        </div>
+        <hr style="margin: 1.5rem 0;">
+        <h3 style="margin-bottom: 1rem;">모델이 없으면 먼저 학습</h3>
+        <div class="form-group">
+            <label>Model Type</label>
+            <select id="anomalyModelType" class="form-control">
+                <option value="gru" selected>GRU</option>
+                <option value="lstm">LSTM</option>
+                <option value="rnn">RNN</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>Epochs</label>
+            <input type="number" id="anomalyEpochs" class="form-control" value="50" min="1">
+        </div>
+        <button class="btn btn-success" onclick="trainAnomaly()" id="trainAnomalyBtn">현재 데이터셋으로 학습</button>
+    </div>
+</div>
+
+<script>
+var DATASET_ID = {{ dataset.id }};
+var currentPreprocess = 'raw';
+var currentTraces = [];
+var allVisible = true;
+
+document.addEventListener('DOMContentLoaded', function() {
+    var select = document.getElementById('targetSelect');
+    if (select.value) {
+        loadGraph('raw');
+    }
+});
+
+function loadGraph(preprocess) {
+    var target = document.getElementById('targetSelect').value;
+    if (!target) {
+        document.getElementById('statusArea').textContent = '타겟을 선택하세요.';
+        return;
+    }
+    if (preprocess) currentPreprocess = preprocess;
+    updateButtonState(currentPreprocess);
+    document.getElementById('statusArea').innerHTML = '<span class="spinner"></span> 데이터 로딩 중...';
+
+    var url = '/api/datasets/' + DATASET_ID + '/graph?target=' + encodeURIComponent(target) + '&preprocess=' + currentPreprocess;
+
+    fetch(url)
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.error) {
+                document.getElementById('statusArea').textContent = '에러: ' + data.error;
+                return;
+            }
+            currentTraces = data.traces;
+            renderGraph(data, null);
+            renderLabelList(data);
+            document.getElementById('statusArea').textContent =
+                data.target_name + ' | ' + data.sample_count + '개 샘플 | 모드: ' + data.preprocess;
+        })
+        .catch(function(err) {
+            document.getElementById('statusArea').textContent = '에러: ' + err.message;
+        });
+}
+
+function renderGraph(data, anomalies) {
+    var traces = [];
+
+    data.traces.forEach(function(trace) {
+        traces.push({
+            x: data.cycles,
+            y: trace.values,
+            mode: 'lines+markers',
+            name: trace.label,
+            line: { width: 1.5, color: trace.color },
+            marker: { size: 3, color: trace.color },
+            text: trace.label + ' (' + (trace.pos_neg || '-') + ')',
+            hoverinfo: 'text+x+y',
+        });
+    });
+
+    // Anomaly X 마커 추가
+    if (anomalies) {
+        Object.keys(anomalies).forEach(function(label) {
+            var indices = anomalies[label];
+            if (indices.length === 0) return;
+
+            // 해당 label의 trace 찾기
+            var matchTrace = null;
+            data.traces.forEach(function(t) {
+                if (t.label === label) matchTrace = t;
+            });
+            if (!matchTrace) return;
+
+            var xVals = [];
+            var yVals = [];
+            indices.forEach(function(idx) {
+                if (idx < data.cycles.length) {
+                    xVals.push(data.cycles[idx]);
+                    yVals.push(matchTrace.values[idx]);
+                }
+            });
+
+            traces.push({
+                x: xVals,
+                y: yVals,
+                mode: 'markers',
+                name: 'Anomaly: ' + label,
+                marker: {
+                    size: 12,
+                    symbol: 'x',
+                    color: 'black',
+                    line: { width: 2, color: 'black' }
+                },
+                showlegend: false,
+                hoverinfo: 'text',
+                text: xVals.map(function(x, i) { return 'ANOMALY ' + label + ' cycle=' + x; }),
+            });
+        });
+    }
+
+    var yaxis = { title: currentPreprocess === 'normalize' ? 'Normalized RFU' : 'RFU' };
+    var yMinVal = document.getElementById('yMin').value;
+    var yMaxVal = document.getElementById('yMax').value;
+    if (yMinVal !== '' && yMaxVal !== '') {
+        yaxis.range = [parseFloat(yMinVal), parseFloat(yMaxVal)];
+    }
+
+    var layout = {
+        title: data.target_name + ' (' + data.preprocess + ')',
+        xaxis: { title: 'Cycle' },
+        yaxis: yaxis,
+        hovermode: 'closest',
+        showlegend: false,
+        margin: { r: 30, t: 50 },
+    };
+
+    Plotly.newPlot('plotArea', traces, layout, { responsive: true, displayModeBar: true });
+}
+
+function renderLabelList(data) {
+    var container = document.getElementById('labelList');
+    container.innerHTML = '';
+    document.getElementById('labelPanel').style.display = 'block';
+    allVisible = true;
+
+    data.traces.forEach(function(trace, idx) {
+        var item = document.createElement('div');
+        item.style.cssText = 'display: flex; align-items: center; padding: 2px 4px; cursor: pointer; font-size: 0.78rem; border-bottom: 1px solid #f0f0f0;';
+        item.setAttribute('data-idx', idx);
+        item.setAttribute('data-visible', 'true');
+
+        var colorDot = document.createElement('span');
+        colorDot.style.cssText = 'display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 5px; flex-shrink: 0; background:' + trace.color + ';';
+
+        var labelText = document.createElement('span');
+        labelText.style.cssText = 'flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;';
+        labelText.textContent = trace.label;
+        labelText.title = trace.label + ' (' + (trace.pos_neg || '-') + ')';
+
+        item.appendChild(colorDot);
+        item.appendChild(labelText);
+
+        // Pos/Neg 표시
+        if (trace.pos_neg) {
+            var badge = document.createElement('span');
+            badge.style.cssText = 'font-size: 0.65rem; font-weight: 700; margin-left: 3px; flex-shrink: 0;';
+            if (trace.pos_neg === 'Positive') {
+                badge.style.color = '#27ae60';
+                badge.textContent = 'P';
+            } else if (trace.pos_neg === 'Negative') {
+                badge.style.color = '#e74c3c';
+                badge.textContent = 'N';
+            }
+            item.appendChild(badge);
+        }
+
+        // 클릭으로 곡선 on/off
+        item.addEventListener('click', function() {
+            var visible = this.getAttribute('data-visible') === 'true';
+            var traceIdx = parseInt(this.getAttribute('data-idx'));
+            Plotly.restyle('plotArea', { visible: visible ? 'legendonly' : true }, [traceIdx]);
+            this.setAttribute('data-visible', visible ? 'false' : 'true');
+            this.style.opacity = visible ? '0.3' : '1';
+        });
+
+        container.appendChild(item);
+    });
+}
+
+function toggleAllTraces() {
+    allVisible = !allVisible;
+    var items = document.getElementById('labelList').children;
+    var indices = [];
+    for (var i = 0; i < items.length; i++) {
+        indices.push(i);
+        items[i].setAttribute('data-visible', allVisible ? 'true' : 'false');
+        items[i].style.opacity = allVisible ? '1' : '0.3';
+    }
+    Plotly.restyle('plotArea', { visible: allVisible ? true : 'legendonly' }, indices);
+}
+
+function setYRange() {
+    var yMin = parseFloat(document.getElementById('yMin').value);
+    var yMax = parseFloat(document.getElementById('yMax').value);
+    if (isNaN(yMin) || isNaN(yMax)) return;
+    Plotly.relayout('plotArea', { 'yaxis.range': [yMin, yMax] });
+}
+
+function resetYRange() {
+    document.getElementById('yMin').value = '';
+    document.getElementById('yMax').value = '';
+    Plotly.relayout('plotArea', { 'yaxis.autorange': true });
+}
+
+// ─── Anomaly Detection ───
+function showAnomalyDialog() {
+    document.getElementById('anomalyDialog').style.display = 'flex';
+}
+
+function hideAnomalyDialog() {
+    document.getElementById('anomalyDialog').style.display = 'none';
+}
+
+function runAnomaly() {
+    hideAnomalyDialog();
+    var target = document.getElementById('targetSelect').value;
+    if (!target) return;
+    var threshold = parseFloat(document.getElementById('anomalyThreshold').value) || 0.01;
+
+    document.getElementById('statusArea').innerHTML = '<span class="spinner"></span> Anomaly Detection 실행 중...';
+
+    var url = '/api/datasets/' + DATASET_ID + '/anomaly?target=' + encodeURIComponent(target) + '&threshold=' + threshold;
+
+    fetch(url)
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.error) {
+                document.getElementById('statusArea').textContent = 'Anomaly 에러: ' + data.error;
+                return;
+            }
+            // Raw 그래프 + anomaly X 마커
+            currentPreprocess = 'raw';
+            updateButtonState('raw');
+            renderGraph(data.graph_data, data.anomalies);
+            renderLabelList(data.graph_data);
+
+            var anomalyCount = 0;
+            Object.keys(data.anomalies).forEach(function(k) {
+                anomalyCount += data.anomalies[k].length;
+            });
+            document.getElementById('statusArea').textContent =
+                data.target_name + ' | Anomaly Detection (threshold=' + data.threshold + ') | 이상치 ' + anomalyCount + '개 발견';
+        })
+        .catch(function(err) {
+            document.getElementById('statusArea').textContent = 'Anomaly 에러: ' + err.message;
+        });
+}
+
+function updateButtonState(active) {
+    var buttons = {
+        'raw': 'btnRaw',
+        'baseline': 'btnBaseline',
+        'normalize': 'btnNormalize'
+    };
+    Object.keys(buttons).forEach(function(key) {
+        var btn = document.getElementById(buttons[key]);
+        btn.className = 'btn btn-secondary';
+    });
+    var activeBtn = document.getElementById(buttons[active]);
+    if (activeBtn) {
+        activeBtn.className = 'btn btn-primary';
+    }
+}
+
+function trainAnomaly() {
+    var target = document.getElementById('targetSelect').value;
+    if (!target) { alert('타겟을 먼저 선택하세요.'); return; }
+
+    var btn = document.getElementById('trainAnomalyBtn');
+    btn.disabled = true;
+    btn.textContent = '학습 중... (수분 소요)';
+
+    var body = JSON.stringify({
+        model_type: document.getElementById('anomalyModelType').value,
+        window_size: 3,
+        epochs: parseInt(document.getElementById('anomalyEpochs').value) || 50
+    });
+
+    fetch('/api/datasets/' + DATASET_ID + '/train-anomaly', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: body
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+        btn.disabled = false;
+        btn.textContent = '현재 데이터셋으로 학습';
+        if (data.success) {
+            alert('학습 완료!\n' + data.message);
+        } else {
+            alert('학습 실패: ' + data.message);
+        }
+    })
+    .catch(function(err) {
+        btn.disabled = false;
+        btn.textContent = '현재 데이터셋으로 학습';
+        alert('에러: ' + err.message);
+    });
+}
+
+
+</script>
+{% endblock %}

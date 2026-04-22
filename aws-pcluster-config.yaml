@@ -1,0 +1,56 @@
+Region: us-east-1
+Image:
+  Os: ubuntu2204
+HeadNode:
+  InstanceType: c5n.large
+  Networking:
+    SubnetId: subnet-0c65bfca99facc5f9 #subnet-00a19b380735a699e
+    AdditionalSecurityGroups:
+    - sg-0a11c663f1c4fc94d # [replace with] the security group with inbound rules for your FSx for Lustre file system
+  Ssh:
+    KeyName: igentech-io22oi-ed25519
+SharedStorage:
+  - MountDir: /fsx
+    Name: lustre
+    StorageType: FsxLustre
+    FsxLustreSettings:
+      FileSystemId: fs-00b6459660e90591f
+Scheduling:
+  Scheduler: slurm
+  SlurmQueues:
+  - Name: queue1
+    ComputeResources:
+    - Name: c5n-xlarge
+      Instances:
+      - InstanceType: c5n.xlarge #t2.2xlarge
+      MinCount: 0
+      MaxCount: 10
+    Networking:
+      SubnetIds:
+      - subnet-0c65bfca99facc5f9 #subnet-0f4a4aa6da697863e
+      AdditionalSecurityGroups:
+      - sg-0a11c663f1c4fc94d  # [replace with] the security group with inbound rules for your FSx for Lustre file system
+
+# # Scheduling:
+#   # Scheduler: slurm
+#   # SlurmQueues:
+#   # - Name: main
+#     # ComputeResources:
+#     # - Name: c5n18xlarge
+#       # InstanceType: c5n.18xlarge
+#       # MinCount: 0
+#       # MaxCount: 10  # max number of concurrent exec-nodes
+#       # DisableSimultaneousMultithreading: true  # disable hyperthreading (recommended)
+#       # Efa:
+#         # Enabled: true
+#     Networking:
+#       SubnetIds:
+#       - subnet-YYYYYYYYYYYYYYYYY  # [replace with] the subnet of your FSx for Lustre file system (same as above)
+#       AdditionalSecurityGroups:
+#         - sg-ZZZZZZZZZZZZZZZZZ  # [replace with] the security group with inbound rules for your FSx for Lustre file system
+#       PlacementGroup:
+#         Enabled: true
+#     ComputeSettings:
+#       LocalStorage:
+#         RootVolume:
+#           VolumeType: io2

@@ -1,0 +1,29 @@
+name: Upload RNN Model Files as Artifact
+
+on:
+  push:
+    branches:
+      - main  # main 브랜치에 푸시될 때 워크플로우 실행
+    paths:
+      - 'models/**' # models 디렉토리 내의 어떤 파일이라도 변경되면 실행
+  workflow_dispatch:
+
+jobs:
+  upload_artifact:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        # 레포지토리 코드를 워크플로우 런너로 가져옵니다.
+        uses: actions/checkout@v4
+
+      - name: Archive and upload 'models' directory
+        # actions/upload-artifact@v4 액션을 사용하여 models 디렉토리를 아티팩트로 업로드합니다.
+        uses: actions/upload-artifact@v4
+        with:
+          # 아티팩트의 이름을 지정합니다.
+          name: models-artifact-${{ github.sha }}
+          # 업로드할 파일 또는 디렉토리 경로를 지정합니다.
+          path: models
+          # 아티팩트 보존 기간을 지정합니다. (기본값은 90일, 여기서는 5일로 설정)
+          retention-days: 90

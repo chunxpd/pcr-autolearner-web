@@ -1,0 +1,67 @@
+{% extends "base.html" %} {% block title %}RF 모델 학습{% endblock %} {% block
+content %}
+<h1>RF Pos/Neg 모델 학습</h1>
+
+<div class="card" style="max-width: 600px">
+  <form method="POST" id="trainForm">
+    <div class="form-group">
+      <label for="model_name">모델 이름 *</label>
+      <input
+        type="text"
+        id="model_name"
+        name="model_name"
+        class="form-control"
+        placeholder="예: HLA_RF_v1"
+        required
+      />
+    </div>
+
+    <div class="form-group">
+      <label for="dataset_id">학습 데이터셋 *</label>
+      <select id="dataset_id" name="dataset_id" class="form-control" required>
+        <option value="">-- 선택 --</option>
+        {% for ds in datasets %}
+        <option value="{{ ds.id }}">
+          {{ ds.name }} (파일 {{ ds.files|length }}개)
+        </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="normalization_mode">Normalization 모드</label>
+      <select
+        id="normalization_mode"
+        name="normalization_mode"
+        class="form-control"
+      >
+        <option value="rotation">Rotation (기본)</option>
+        <option value="primitive">Primitive</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label>
+        <input type="checkbox" name="ddcq" value="true" /> ddCq 적용
+      </label>
+    </div>
+
+    <div style="margin-top: 1.5rem">
+      <button type="submit" class="btn btn-primary" id="trainBtn">
+        학습 시작
+      </button>
+      <a href="/models" class="btn btn-secondary" style="margin-left: 0.5rem"
+        >취소</a
+      >
+    </div>
+  </form>
+</div>
+
+<script>
+  document.getElementById("trainForm").addEventListener("submit", function () {
+    var btn = document.getElementById("trainBtn");
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> 학습 중... (수십 초 소요)';
+  });
+</script>
+{% endblock %}

@@ -1,0 +1,231 @@
+{% extends "base.html" %} {% block title %}클러스터링 - {{ dataset.name }}{%
+endblock %} {% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center">
+  <h1>Clustering: {{ dataset.name }}</h1>
+  <a href="/datasets/{{ dataset.id }}/analysis" class="btn btn-secondary"
+    >← 그래프 분석으로</a
+  >
+</div>
+
+<!-- 파라미터 설정 -->
+<div class="card mb-2">
+  <div
+    style="display: flex; gap: 1.5rem; align-items: flex-end; flex-wrap: wrap"
+  >
+    <div class="form-group" style="margin-bottom: 0">
+      <label for="nClusters">Number of Clusters</label>
+      <input
+        type="number"
+        id="nClusters"
+        class="form-control"
+        value="3"
+        min="2"
+        max="10"
+        style="width: 100px"
+      />
+    </div>
+    <div class="form-group" style="margin-bottom: 0">
+      <label for="clusterMethod">Clustering Method</label>
+      <select id="clusterMethod" class="form-control" style="width: 150px">
+        <option value="kmeans" selected>KMeans</option>
+        <option value="gmm">GMM</option>
+        <option value="bgmm">Bayesian GMM</option>
+      </select>
+    </div>
+    <div class="form-group" style="margin-bottom: 0">
+      <label for="earlyWeight">Early Cycle Weight</label>
+      <input
+        type="number"
+        id="earlyWeight"
+        class="form-control"
+        value="1.00"
+        step="0.1"
+        min="0.1"
+        style="width: 100px"
+      />
+    </div>
+    <button class="btn btn-primary" onclick="runClustering()" id="clusterBtn">
+      클러스터링 실행
+    </button>
+    <div id="clusterStatus" style="font-size: 0.85rem; color: #7f8c8d"></div>
+  </div>
+</div>
+
+<!-- 탭: PCA Scatter Plot / Cluster Profiles -->
+<div id="resultArea" style="display: none">
+  <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem">
+    <button class="btn btn-primary" id="tabPCA" onclick="showTab('pca')">
+      PCA Scatter Plot
+    </button>
+    <button
+      class="btn btn-secondary"
+      id="tabProfiles"
+      onclick="showTab('profiles')"
+    >
+      Cluster Profiles
+    </button>
+  </div>
+
+  <!-- PCA Scatter Plot -->
+  <div id="pcaArea" class="card" style="padding: 1rem">
+    <div id="pcaPlot" style="width: 100%; height: 600px"></div>
+  </div>
+
+  <!-- Cluster Profiles -->
+  <div id="profilesArea" style="display: none">
+    <div
+      id="profileTabs"
+      style="display: flex; gap: 0.5rem; margin-bottom: 1rem"
+    ></div>
+    <div id="profilePlot" class="card" style="padding: 1rem">
+      <div id="profileChart" style="width: 100%; height: 500px"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  var DATASET_ID = {{ dataset.id }};
+  var clusterResult = null;
+
+  function runClustering() {
+      var btn = document.getElementById('clusterBtn');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span> 클러스터링 중...';
+      document.getElementById('clusterStatus').textContent = '';
+
+      var body = JSON.stringify({
+          n_clusters: parseInt(document.getElementById('nClusters').value) || 3,
+          method: document.getElementById('clusterMethod').value,
+          early_weight: parseFloat(document.getElementById('earlyWeight').value) || 1.0
+      });
+
+      fetch('/api/datasets/' + DATASET_ID + '/clustering', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: body
+      })
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+          btn.disabled = false;
+          btn.textContent = '클러스터링 실행';
+
+          if (!data.success) {
+              document.getElementById('clusterStatus').textContent = '에러: ' + data.message;
+              return;
+          }
+
+          clusterResult = data;
+          document.getElementById('resultArea').style.display = 'block';
+          document.getElementById('clusterStatus').textContent =
+              data.method.toUpperCase() + ' | ' + data.pca.sample_labels.length + '개 샘플 | ' + data.profiles.length + '개 클러스터';
+
+          renderPCA(data);
+          buildProfileTabs(data);
+          showTab('pca');
+      })
+      .catch(function(err) {
+          btn.disabled = false;
+          btn.textContent = '클러스터링 실행';
+          document.getElementById('clusterStatus').textContent = '에러: ' + err.message;
+      });
+  }
+
+  function renderPCA(data) {
+      var clusterColors = ['#9467bd', '#17becf', '#bcbd22', '#e377c2', '#1f77b4',
+                           '#ff7f0e', '#2ca02c', '#d62728', '#8c564b', '#7f7f7f'];
+      var traces = [];
+      var uniqueLabels = [];
+      data.pca.labels.forEach(function(l) {
+          if (uniqueLabels.indexOf(l) === -1) uniqueLabels.push(l);
+      });
+      uniqueLabels.sort();
+
+      uniqueLabels.forEach(function(cl) {
+          var xVals = [], yVals = [], textVals = [];
+          for (var i = 0; i < data.pca.labels.length; i++) {
+              if (data.pca.labels[i] === cl) {
+                  xVals.push(data.pca.x[i]);
+                  yVals.push(data.pca.y[i]);
+                  textVals.push(data.pca.sample_labels[i]);
+              }
+          }
+          traces.push({
+              x: xVals,
+              y: yVals,
+              mode: 'markers+text',
+              name: 'Cluster ' + cl + ' (n=' + xVals.length + ')',
+              marker: { size: 7, color: clusterColors[cl % clusterColors.length], opacity: 0.7 },
+              text: textVals,
+              textposition: 'top right',
+              textfont: { size: 8, color: '#555' },
+              hoverinfo: 'text+x+y',
+          });
+      });
+
+      var layout = {
+          title: 'PCR Clustering Results (PCA) - ' + data.method,
+          xaxis: { title: 'PC1' },
+          yaxis: { title: 'PC2' },
+          hovermode: 'closest',
+          legend: { orientation: 'h', y: -0.15 },
+      };
+
+      Plotly.newPlot('pcaPlot', traces, layout, { responsive: true });
+  }
+
+  function buildProfileTabs(data) {
+      var container = document.getElementById('profileTabs');
+      container.innerHTML = '';
+
+      data.profiles.forEach(function(profile) {
+          var btn = document.createElement('button');
+          btn.className = 'btn btn-secondary';
+          btn.textContent = 'Cluster ' + profile.cluster + ' (n=' + profile.n + ')';
+          btn.onclick = function() { renderProfile(profile); };
+          container.appendChild(btn);
+      });
+
+      if (data.profiles.length > 0) {
+          renderProfile(data.profiles[0]);
+      }
+  }
+
+  function renderProfile(profile) {
+      var traces = [];
+
+      // 개별 곡선 (회색, 투명)
+      profile.curves.forEach(function(curve, idx) {
+          traces.push({
+              y: curve,
+              mode: 'lines',
+              line: { width: 1, color: 'rgba(180,180,180,0.3)' },
+              showlegend: false,
+              hoverinfo: 'skip',
+          });
+      });
+
+      // 평균 곡선 (빨간색)
+      traces.push({
+          y: profile.mean,
+          mode: 'lines',
+          name: 'Mean Pattern',
+          line: { width: 3, color: 'red' },
+      });
+
+      var layout = {
+          title: 'Cluster ' + profile.cluster + ' Profile (n=' + profile.n + ')',
+          xaxis: { title: 'Cycle' },
+          yaxis: { title: 'Normalized RFU' },
+      };
+
+      Plotly.newPlot('profileChart', traces, layout, { responsive: true });
+  }
+
+  function showTab(tab) {
+      document.getElementById('pcaArea').style.display = tab === 'pca' ? 'block' : 'none';
+      document.getElementById('profilesArea').style.display = tab === 'profiles' ? 'block' : 'none';
+      document.getElementById('tabPCA').className = 'btn ' + (tab === 'pca' ? 'btn-primary' : 'btn-secondary');
+      document.getElementById('tabProfiles').className = 'btn ' + (tab === 'profiles' ? 'btn-primary' : 'btn-secondary');
+  }
+</script>
+{% endblock %}

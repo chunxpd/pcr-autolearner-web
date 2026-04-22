@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.1/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-iYQeCzEYFbKjA/T2uDLTpkwGzCiq6soy8tYaI1GyVh/UjpbCx/TYkiZhlZB6+fzT" crossorigin="anonymous">
+
+    <script src="https://code.jquery.com/jquery-3.5.0.js"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/index_style.css') }}">
+</head>
+
+<body>
+    primer sequence:
+    <ol>
+        <li>
+            {{data.in_primer_sequence1}}, reverseq: {{data.in_primer_sequence1_reverseq}}
+        </li>
+        <li>
+            {{data.in_primer_sequence2}}, reverseq: {{data.in_primer_sequence2_reverseq}}
+        </li>
+        <li>
+            {{data.in_primer_sequence3}}, reverseq: {{data.in_primer_sequence3_reverseq}}
+        </li>
+        <li>
+            {{data.in_primer_sequence4}}, reverseq: {{data.in_primer_sequence4_reverseq}}
+        </li>
+    </ol>
+    exclude txid: {{data.in_exclude_txids}} <br>
+    jobid : {{jobid}} <br>
+    <button id="submit_blastn">blastn 시작</button>
+    <details open id="primer1_blastn">
+        <summary>primer1 blastn 결과</summary>
+        <div class="multi">
+            <h3>blastn 결과 컬럼</h3>
+            <p>
+            <div id="blastn_all_res1"></div>
+            </p>
+            <h3 id="blastn_exc_res1_header" style="display: none;">blastn exclude taxa 결과 컬럼</h3>
+            <p>
+            <div id="blastn_exc_res1"></div>
+            </p>
+        </div>
+    </details>
+    <details close id="primer2_blastn" style="display: none;">
+        <summary>primer2 blastn 결과</summary>
+        <div class="multi">
+            <h3>blastn 결과 컬럼</h3>
+            <p>
+            <div id="blastn_all_res2"></div>
+            </p>
+            <h3 id="blastn_exc_res2_header" style="display: none;">blastn exclude taxa 결과 컬럼</h3>
+            <p>
+            <div id="blastn_exc_res2"></div>
+            </p>
+        </div>
+    </details>
+    <details close id="primer3_blastn" style="display: none;">
+        <summary>primer3 blastn 결과</summary>
+        <div class="multi">
+            <h3>blastn 결과 컬럼</h3>
+            <p>
+            <div id="blastn_all_res3"></div>
+            </p>
+            <h3 id="blastn_exc_res3_header" style="display: none;">blastn exclude taxa 결과 컬럼</h3>
+            <p>
+            <div id="blastn_exc_res3"></div>
+            </p>
+        </div>
+    </details>
+    <details close id="primer4_blastn" style="display: none;">
+        <summary>primer4 blastn 결과</summary>
+        <div class="multi">
+            <h3>blastn 결과 컬럼</h3>
+            <p>
+            <div id="blastn_all_res4"></div>
+            </p>
+            <h3 id="blastn_exc_res4_header" style="display: none;">blastn exclude taxa 결과 컬럼</h3>
+            <p>
+            <div id="blastn_exc_res4"></div>
+            </p>
+        </div>
+    </details>
+
+    <form action="genebank" id="genebank" style="display:none" method="get">
+        {{jobid}}의 HSP up/downstream 1개 유전자 영역 서열을 내려받습니다<br>
+        specificity 가 높다고 판단 되는 primer 를 체크해 주십시오.<br>
+        jobid: <input type="text" id="jobid" name="jobid" value={{jobid}}><br>
+
+        <input type="checkbox" id="dw_primer1" name="dw_primer1" value={{data.in_primer_sequence1}}>
+        <label for="dw_primer1">{{data.in_primer_sequence1}}</label><br>
+        <input type="checkbox" id="dw_primer2" name="dw_primer2" value={{data.in_primer_sequence2}}>
+        <label for="dw_primer2">{{data.in_primer_sequence2}}</label><br>
+        <input type="checkbox" id="dw_primer3" name="dw_primer3" value={{data.in_primer_sequence3}}>
+        <label for="dw_primer3">{{data.in_primer_sequence3}}</label><br>
+        <input type="checkbox" id="dw_primer4" name="dw_primer4" value={{data.in_primer_sequence4}}>
+        <label for="dw_primer4">{{data.in_primer_sequence4}}</label><br>
+        <button type="submit"> submit </button>
+    </form>
+
+    <script>
+        var isRun = 0;
+        var interval_list_blastn = []
+        var interval_list_exc = []
+        let primer_seqs = ['{{data.in_primer_sequence1}}']
+        let reverseq = ['{{data.in_primer_sequence1_reverseq}}']
+        if ('{{data.in_primer_sequence2}}' != '') {
+            primer_seqs.push('{{data.in_primer_sequence2}}')
+            reverseq.push('{{data.in_primer_sequence2_reverseq}}')
+            $("#primer2_blastn").show()
+        }
+        if ('{{data.in_primer_sequence3}}' != '') {
+            primer_seqs.push('{{data.in_primer_sequence3}}')
+            reverseq.push('{{data.in_primer_sequence3_reverseq}}')
+            $("#primer3_blastn").show()
+        }
+        if ('{{data.in_primer_sequence4}}' != '') {
+            primer_seqs.push('{{data.in_primer_sequence4}}')
+            reverseq.push('{{data.in_primer_sequence4_reverseq}}')
+            $("#primer4_blastn").show()
+        }
+        // exclude taxa 가 빈칸으로 오면 blastn exclude 컬럼은 삭제한다
+        if ('{{data.in_exclude_txids}}' != '') {
+            for (var iii = 1; iii <= 4; iii++) {
+                $("#blastn_exc_res" + iii + "_header").show();
+            }
+        }
+        $("#submit_blastn").click(function () {
+            if (isRun > 0) {
+                alert("blast " + isRun + "개 실행 중 잠시 기다리세요");
+                return;
+            }
+            for (var iii = 1; iii <= primer_seqs.length; iii++) {
+                (function (iii) {
+                    $.ajax({
+                        type: 'POST',
+                        url: '{{url_for("run_sub_blastn_all")}}',
+                        data: JSON.stringify({
+                            "in_primer_sequence": primer_seqs[iii - 1], "in_primer_sequence_reverseq": reverseq[iii - 1],
+                            "jobid": '{{ jobid }}', "in_exclude_txids": '{{data.in_exclude_txids}}'
+                        }),
+                        dataType: 'JSON',
+                        contentType: "application/json",
+                        success: function (data) {
+                            $("#blastn_all_res" + iii).html(data['res']);
+                        },
+                        beforeSend: function () {
+                            isRun = isRun + 1;
+                            $("#blastn_all_res" + iii).html("blastn running... wait.<br> query primer seq: " + primer_seqs[iii - 1] + "<br>");
+                            interval_list_blastn.push(setInterval(function () {
+                                $("#blastn_all_res" + iii).toggle();
+                            }, 500));
+                        },
+                        complete: function () {
+                            isRun = isRun - 1;
+                            //success 이후에 실행이 되는 것
+                            $("#blastn_all_res" + iii).show();
+                            clearInterval(interval_list_blastn[iii - 1])
+                            if ('{{data.in_exclude_txids}}' != '') {
+                                $("#genebank").show();
+                            }
+                        },
+                        error: function (request, status, error) {
+                            alert('ajax error:[' + status + '][' + error + ']')
+                        }
+                    })
+
+                    // 아래는 exclude taxa 가 있을 때만 실행해야 한다.
+                    if ('{{data.in_exclude_txids}}' != '') {
+                        $.ajax({
+                            type: 'POST',
+                            url: '{{url_for("run_sub_blastn_exclude")}}',
+                            data: JSON.stringify({
+                                "in_primer_sequence": primer_seqs[iii - 1], "in_primer_sequence_reverseq": reverseq[iii - 1],
+                                "jobid": '{{ jobid }}', "in_exclude_txids": '{{data.in_exclude_txids}}'
+                            }),
+                            dataType: 'JSON',
+                            contentType: "application/json",
+                            success: function (data) {
+                                $("#blastn_exc_res" + iii).html(data['res']);
+                            },
+                            beforeSend: function () {
+                                isRun = isRun + 1;
+                                $("#blastn_exc_res" + iii).html(
+                                    "blastn (excluding taxa) running... wait.<br>" +
+                                    "query primer seq: " + primer_seqs[iii - 1] + "<br>" +
+                                    "exclude taxa:" + '{{data.in_exclude_txids}}');
+                                interval_list_exc.push(setInterval(function () {
+                                    $("#blastn_exc_res" + iii).toggle();
+                                }, 500));
+                            },
+                            complete: function () {
+                                isRun = isRun - 1;
+                                //success 이후에 실행이 되는 것
+                                $("#blastn_exc_res" + iii).show();
+                                clearInterval(interval_list_exc[iii - 1]);
+                                $("#genebank").show();
+                            },
+                            error: function (request, status, error) {
+                                alert('ajax error:[' + status + '][' + error + ']')
+                            }
+                        });
+                    }
+                })(iii);
+            }
+        })
+    </script>
+</body>
+
+</html>

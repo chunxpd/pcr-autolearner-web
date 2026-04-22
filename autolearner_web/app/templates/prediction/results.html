@@ -1,0 +1,71 @@
+{% extends "base.html" %} {% block title %}예측 결과{% endblock %} {% block
+content %}
+<h1>예측 결과</h1>
+
+<!-- 요약 -->
+<div class="dashboard-cards">
+  <div class="card">
+    <h3>모델</h3>
+    <p style="font-size: 1.2rem; font-weight: 700">{{ summary.model_name }}</p>
+  </div>
+  <div class="card">
+    <h3>데이터셋</h3>
+    <p style="font-size: 1.2rem; font-weight: 700">
+      {{ summary.dataset_name }}
+    </p>
+  </div>
+  <div class="card">
+    <h3>전체 정확도</h3>
+    <p class="card-number">{{ "%.2f"|format(summary.accuracy * 100) }}%</p>
+    <p class="text-muted">{{ summary.correct }} / {{ summary.total }}</p>
+  </div>
+</div>
+
+<!-- 상세 결과 -->
+<h2>상세 결과 ({{ results|length }}건)</h2>
+<table class="table">
+  <thead>
+    <tr>
+      <th>Target</th>
+      <th>샘플</th>
+      <th>실제</th>
+      <th>예측</th>
+      <th>결과</th>
+      <th>파일</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for r in results %}
+    <tr style="{{ 'background: #fff5f5;' if not r.correct else '' }}">
+      <td style="font-family: monospace">{{ r.target }}</td>
+      <td>{{ r.key }}</td>
+      <td
+        style="{{ 'color: #27ae60;' if r.actual == 'Positive' else 'color: #e74c3c;' }}"
+      >
+        {{ r.actual }}
+      </td>
+      <td
+        style="{{ 'color: #27ae60;' if r.predicted == 'Positive' else 'color: #e74c3c;' }}"
+      >
+        {{ r.predicted }}
+      </td>
+      <td>
+        {% if r.correct %}
+        <span class="badge badge-success">일치</span>
+        {% else %}
+        <span class="badge badge-error">불일치</span>
+        {% endif %}
+      </td>
+      <td style="font-size: 0.8rem; font-family: monospace">
+        {{ r.file_name }}
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<div style="margin-top: 1.5rem">
+  <a href="/prediction" class="btn btn-primary">← 다시 예측</a>
+  <a href="/models" class="btn btn-secondary">모델 목록</a>
+</div>
+{% endblock %}

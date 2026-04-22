@@ -1,0 +1,63 @@
+{% extends "base.html" %} {% block title %}모델 목록{% endblock %} {% block
+content %}
+<div style="display: flex; justify-content: space-between; align-items: center">
+  <h1>저장된 모델 목록</h1>
+  <a href="/training/rf" class="btn btn-primary">+ RF 모델 학습</a>
+</div>
+
+{% if models %}
+<table class="table">
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>이름</th>
+      <th>유형</th>
+      <th>정확도</th>
+      <th>데이터셋</th>
+      <th>생성일</th>
+      <th>작업</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for m in models %}
+    <tr>
+      <td>{{ m.id }}</td>
+      <td>{{ m.name }}</td>
+      <td><span class="badge badge-info">{{ m.model_type|upper }}</span></td>
+      <td>{{ "%.4f"|format(m.accuracy) if m.accuracy else '-' }}</td>
+      <td>{{ m.dataset_id or '-' }}</td>
+      <td>{{ m.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+      <td>
+        <a
+          href="/prediction"
+          class="btn btn-success"
+          style="padding: 0.3rem 0.8rem; font-size: 0.8rem"
+          >예측</a
+        >
+        <form
+          method="POST"
+          action="/models/{{ m.id }}/delete"
+          style="display: inline"
+          onsubmit="return confirm('정말 삭제하시겠습니까?');"
+        >
+          <button
+            type="submit"
+            class="btn btn-danger"
+            style="padding: 0.3rem 0.8rem; font-size: 0.8rem"
+          >
+            삭제
+          </button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="card" style="text-align: center; padding: 3rem">
+  <p class="text-muted">저장된 모델이 없습니다.</p>
+  <a href="/training/rf" class="btn btn-primary" style="margin-top: 1rem"
+    >첫 모델 학습하기 →</a
+  >
+</div>
+{% endif %} {% endblock %}

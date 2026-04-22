@@ -1,0 +1,66 @@
+{% extends "base.html" %} {% block title %}예측{% endblock %} {% block content
+%}
+<h1>RF Pos/Neg 예측</h1>
+
+<div class="card" style="max-width: 600px">
+  <form method="POST" id="predictForm">
+    <div class="form-group">
+      <label for="model_id">모델 선택 *</label>
+      <select id="model_id" name="model_id" class="form-control" required>
+        <option value="">-- 모델 선택 --</option>
+        {% for m in models %}
+        <option value="{{ m.id }}">
+          {{ m.name }} (정확도: {{ "%.4f"|format(m.accuracy) if m.accuracy else
+          'N/A' }})
+        </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="dataset_id">예측할 데이터셋 *</label>
+      <select id="dataset_id" name="dataset_id" class="form-control" required>
+        <option value="">-- 데이터셋 선택 --</option>
+        {% for ds in datasets %}
+        <option value="{{ ds.id }}">{{ ds.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="normalization_mode">Normalization 모드</label>
+      <select
+        id="normalization_mode"
+        name="normalization_mode"
+        class="form-control"
+      >
+        <option value="rotation">Rotation (기본)</option>
+        <option value="primitive">Primitive</option>
+      </select>
+    </div>
+
+    <div style="margin-top: 1.5rem">
+      <button type="submit" class="btn btn-success" id="predictBtn">
+        예측 실행
+      </button>
+    </div>
+  </form>
+</div>
+
+{% if not models %}
+<div class="alert alert-warning" style="margin-top: 1rem; max-width: 600px">
+  저장된 RF 모델이 없습니다.
+  <a href="/training/rf">먼저 학습을 진행해주세요.</a>
+</div>
+{% endif %}
+
+<script>
+  document
+    .getElementById("predictForm")
+    .addEventListener("submit", function () {
+      var btn = document.getElementById("predictBtn");
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span> 예측 중...';
+    });
+</script>
+{% endblock %}

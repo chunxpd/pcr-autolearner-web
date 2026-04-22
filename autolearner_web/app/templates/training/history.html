@@ -1,0 +1,50 @@
+{% extends "base.html" %} {% block title %}학습 이력{% endblock %} {% block
+content %}
+<h1>학습 이력</h1>
+
+{% if runs %}
+<table class="table">
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>상태</th>
+      <th>정확도</th>
+      <th>샘플 수</th>
+      <th>시작</th>
+      <th>종료</th>
+      <th>에러</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for r in runs %}
+    <tr>
+      <td>{{ r.id }}</td>
+      <td>
+        {% if r.status == 'success' %}
+        <span class="badge badge-success">성공</span>
+        {% elif r.status == 'failed' %}
+        <span class="badge badge-error">실패</span>
+        {% elif r.status == 'running' %}
+        <span class="badge badge-warning">실행중</span>
+        {% else %}
+        <span class="badge badge-info">{{ r.status }}</span>
+        {% endif %}
+      </td>
+      <td>{{ "%.4f"|format(r.accuracy) if r.accuracy else '-' }}</td>
+      <td>{{ r.sample_count or '-' }}</td>
+      <td>
+        {{ r.started_at.strftime('%m-%d %H:%M') if r.started_at else '-' }}
+      </td>
+      <td>
+        {{ r.finished_at.strftime('%m-%d %H:%M') if r.finished_at else '-' }}
+      </td>
+      <td style="font-size: 0.8rem; color: #e74c3c">
+        {{ r.error_message or '' }}
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p class="text-muted">학습 이력이 없습니다.</p>
+{% endif %} {% endblock %}
